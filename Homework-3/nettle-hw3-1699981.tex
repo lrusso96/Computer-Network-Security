@@ -1,0 +1,140 @@
+\begin{center}
+	\fbox{	
+		\parbox{\textwidth}{
+			\includegraphics[width=0.4\textwidth]{nettle-logo-hw3-1699981.png} \\\\
+			\underline{Infobox} \\
+			\textit{License}: GNU LGPLv3 \\
+			\textit{Language}: C \\
+			\textit{Company}: - \\
+			\textit{Last version}: 3.4 (\textbf{2017}) \\
+			\textit{Website}: http://www.lysator.liu.se/~nisse/nettle/	\\
+			\textit{Source code}: https://git.lysator.liu.se/nettle/nettle
+		}
+	}
+\end{center}
+
+\newpage
+\subsection{Key generation and exchange}
+\begin{table}[!ht]
+	\begin{tabular}{|| c | c | c | c ||}
+		\textbf{DH} & \textbf{EDH} & \textbf{DSA} & \textbf{RSA} \\
+		\hline \hline
+		- & - & YES & YES \\
+	\end{tabular}
+\end{table}
+
+\subsubsection*{API basic reference}
+Nettle supports only RSA and DSA and in the next lines RSA basic API will be discussed. First of all a pair of key is needed, one public and another private. They can be generated with:
+\begin{verbatim}
+  void rsa_public_key_init (struct rsa_public_key *pub)
+  void rsa_private_key_init (struct rsa_private_key *key)
+\end{verbatim}
+that store the keys to ad-hoc objects. Then the following:
+\begin{verbatim}
+  int rsa_public_key_prepare (struct rsa_public_key *pub)
+  int rsa_private_key_prepare (struct rsa_private_key *key)
+\end{verbatim}
+are used to compute the octet size of the key and moreover to check is the keys can be used (PKCS \#1 standard). After that it is possible both to encrypt and decrypt messages with the following:
+\begin{verbatim}
+  int rsa_encrypt (const struct rsa_public_key *key, void *random_ctx,
+                           nettle_random_func *random, size_t length,
+                           const uint8_t *cleartext, mpz_t ciphertext)
+                           
+   int rsa_decrypt (const struct rsa_private_key *key,
+             size_t *length, uint8_t *cleartext, const mpz_t ciphertext)                           
+\end{verbatim}
+\newpage
+
+\subsection{Public key cryptography standard}
+\begin{table}[!ht]
+	\begin{tabular}{|| c | c | c | c | c ||}
+		\textbf{PKCS \#1} & \textbf{PKCS \#5} & \textbf{PKCS \#8}  & \textbf{PKCS \#11} & \textbf{PKCS \#12} \\
+		\hline \hline
+		YES & YES & - & - & - \\
+	\end{tabular}
+\end{table}
+
+\subsection{Hash}
+\begin{table}[!ht]
+	\begin{tabular}{|| c | c | c ||}
+		\textbf{SHA-1} & \textbf{SHA-2} & \textbf{SHA-3} \\
+		\hline \hline
+		YES & YES & YES \\
+	\end{tabular}
+\end{table}
+
+\subsubsection*{API basic reference}
+Nettle uses 3 different functions to handle hashes: init, update and digest. Let's see the functions for SHA-1: the others can be obtained simply replacing the prefix of the following functions. To create a hash state it is necessary to call
+\begin{verbatim}
+  void sha1_init (struct sha1_ctx *ctx)
+\end{verbatim}
+After that we can feed data to the hash state and concatenate them all with:
+\begin{verbatim}
+  void sha1_update (struct sha1_ctx *ctx, size_t length, const uint8_t *data)
+\end{verbatim}
+and finally, to get the result digest we can call:
+\begin{verbatim}
+  void sha1_digest (struct sha1_ctx *ctx, size_t length, uint8_t *digest)
+\end{verbatim}
+that also resets the state, ready to be reused for later digests.
+\newpage
+
+\subsection{MAC}
+\begin{table}[!ht]
+	\begin{tabular}{|| c | c | c | c | c ||}
+		\textbf{HMAC-MD5} & \textbf{HMAC-SHA-1} & \textbf{HMAC-SHA-2} & \textbf{Poly1305-AES} & \textbf{BLAKE2-MAC} \\
+		\hline \hline
+		YES & YES & YES & YES & - \\
+	\end{tabular}
+\end{table}
+
+\subsection{Block ciphers}
+\begin{table}[!h]
+	\begin{tabular}{|| c | c | c | c | c ||}
+		\textbf{AES} & \textbf{Camellia} & \textbf{3DES} & \textbf{Blowfish} & \textbf{Twofish} \\
+		\hline \hline
+		YES & YES & YES & YES & - \\
+	\end{tabular}
+\end{table}
+\subsubsection*{API basic reference}
+In this section AES-256 encryption algorithm is considered: the other supported algorithms can be used simply replacing the prefix of the following functions. To encrypt a block of text with a private key you have to call simply:
+\begin{verbatim}
+  void aes256_encrypt (struct aes256_ctx *ctx, size_t length,
+                            uint8_t *dst, const uint8_t *src)
+\end{verbatim}
+The private key can be set with the following:
+\begin{verbatim}
+  void aes256_set_encrypt_key (struct aes256_ctx *ctx, const uint8_t *key)
+\end{verbatim}
+The context object must be initialized for encryption of course. The symmetric operation, i.e. the decryption, can be performed in the same way, simply replacing the kyword decrypt to the encrypt in the above functions. In this case the context must be initialized for decryption 
+\newpage
+
+\subsection{Modes of operations}
+\begin{table}[!h]
+	\begin{tabular}{|| c | c | c | c | c | c | c | c ||}
+		\textbf{ECB} & \textbf{CBC} & \textbf{OFB} & \textbf{CFB} & \textbf{CTR} & \textbf{CCM} & \textbf{GCM} & \textbf{OCB} \\
+		\hline \hline
+		YES & YES & - & - & YES  & YES & YES & -\\
+	\end{tabular}
+\end{table}
+
+\subsubsection*{API basic reference}
+We consider the CBC Mode of Operation. To encrypt a block it is necessary to call:
+\begin{verbatim}
+  void cbc_encrypt (const void *ctx, nettle_cipher_func *f,
+               size_t block_size, uint8_t *iv, size_t length,
+                            uint8_t *dst, const uint8_t *src)
+\end{verbatim}
+The decrypt function is the same, except for the suffix name (replace decrypt with encrypt). However Nettle suggests to not use directly these functions and make use, instead, of already defined MACROS. They are:
+\begin{verbatim}
+  CBC_CTX (context_type, block_size)
+\end{verbatim}
+that creates the context. Then, to setup the IV it is possible to use the following:
+\begin{verbatim}
+  CBC_SET_IV (ctx, iv)
+\end{verbatim}
+and finally start the encrypt/decrypt process with:
+\begin{verbatim}
+  CBC_ENCRYPT (ctx, f, length, dst, src)
+  CBC_DECRYPT (ctx, f, length, dst, src)
+ \end{verbatim}

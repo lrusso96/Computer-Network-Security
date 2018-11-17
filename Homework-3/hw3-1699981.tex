@@ -1,0 +1,88 @@
+\documentclass[11 pt]{article}
+\usepackage{graphicx}
+\title{
+	Crypto Collection - v0.1 \\
+	\large HW3 - CNS Sapienza}
+
+\author{Luigi Russo 1699981}
+\date{13/11/2018}
+
+\begin{document}
+
+\maketitle
+
+For updated version visit https://www.gitlab.com/lrusso96
+\section{Introduction}
+I've decided to list C and C++ cryptographic libraries. For each library I will give a brief overview (license, language, etc.). Then I will give some details about the following cryptographic fields:
+\begin{itemize}
+	\item Key generation
+	\item PKCS
+	\item Hash
+	\item MAC
+	\item Block Cipher
+	\item Cipher Modes
+\end{itemize}, specifying for each of these what kind of algorithms / protocols they actually support. Then (except for PCKS and MAC) I will give some basic API and in some cases I will present some simplified examples: here basic API expression means a very simple schema to do basic cryptographic operations.
+\paragraph*{Note:} this report is not somehow \textit{The Ultimate Cryptographic Guide}; for full API reference I will provide the links to the actual manuals. This report is just a simple collection that aims to provide a very basic idea of how API of each library has been projected and how you can implement simple snippets of code. The examples are often grabbed from the official manuals, and where possible, have been further simplified.
+
+\subsection{Changelog}
+\textbf{v0.1} (13/11/2018)
+\begin{itemize}
+	\item OpenSSL, Nettle, Botan and Crypto++ support.
+	\item basic API and examples for: Key generation, HASH, Block Cipher and Cipher Modes.
+	\item List of algorithms and protocols supported for the above categories plus MAC and PKCS.
+\end{itemize}
+ 
+\section{Current Libraries}
+\textbf{C}
+\begin{itemize}
+	\item OpenSSL
+	\item Nettle
+\end{itemize}
+\textbf{C++}
+\begin{itemize}
+	\item Botan
+	\item Crypto++
+\end{itemize}
+\section{Notable Libraries not (yet) included}
+\begin{itemize}
+	\item Themis - C++ (Apache 2.0)
+	\item NaCl - C++ (Public domain)
+	\item Libgcrypt - C (GPL)
+	\item libtomcrypt - C (Public domain)
+	\item HElib - C++ (Apache 2.0)
+\end{itemize}
+
+\section{Beyond C and C++}
+I've focused on C and C++ libraries, because of the great effort made to develop robust, efficient cryptographic algorithms and protocols in these two languages. However in near future it would be nice to add some other languages (e.g. Java).
+\include{openssl-hw3-1699981}
+\include{nettle-hw3-1699981}
+\include{botan-hw3-1699981}
+\include{cryptopp-hw3-1699981}
+
+\begin{thebibliography}{10}
+
+	\subsubsection*{Manuals and Docs}
+	\bibitem{OpenSSL Manual}
+	\textsl{OpenSSL} \\
+	\textit{https://www.openssl.org/docs}
+	
+	\bibitem{Nettle Manual}
+	\textsl{Nettle} \\
+	\textit{http://www.lysator.liu.se/~nisse/nettle/nettle.html}
+	
+	\bibitem{Botan Manual}
+	\textsl{Botan} \\
+	\textit{https://botan.randombit.net/manual}
+	
+	\bibitem{Crypto++ Manual}
+	\textsl{Crypto++} \\
+	\textit{https://www.cryptopp.com/docs/ref}
+	
+	\subsubsection*{Other}	
+	\bibitem{Wikipedia}
+	\textsl{Wikipedia Cryptography Portal} \\
+	\textit{https://en.wikipedia.org/wiki/Portal:Cryptography}
+	
+\end{thebibliography}
+
+\end{document}

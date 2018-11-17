@@ -1,0 +1,239 @@
+\begin{center}
+	\fbox{	
+		\parbox{\textwidth}{
+			\includegraphics[width=0.4\textwidth]{OpenSSL_logo-hw3-1699981.png} \\\\
+			\underline{Infobox} \\
+			\textit{License}: Apache 1.0 / 4-BSD \\
+			\textit{Language}: C \\
+			\textit{Company}: The OpenSSL Project \\
+			\textit{Last version}: 1.1.1 (\textbf{2018}) \\
+			\textit{Website}: https://www.openssl.org \\
+			\textit{Source code}: https://www.github.com/openssl/openssl	
+		}
+	}
+\end{center}
+
+\newpage
+\subsection{Key generation and exchange}
+\begin{table}[!ht]
+	\begin{tabular}{|| c | c | c | c ||}
+		\textbf{DH} & \textbf{EDH} & \textbf{DSA} & \textbf{RSA} \\
+		\hline \hline
+		YES & YES & YES & YES \\
+	\end{tabular}
+\end{table}
+
+\subsubsection*{API basic reference}
+Must use \textit{evp} interface: first choose the proper context (e.g \textit{DH}). Then initialize a public key algorithm context using key pkey for shared secret derivation. The return value is 1 for success, 0 or a negative value for failure: in particular -2 indicates the operation is not supported by the public key algorithm.
+\begin{verbatim}
+  int EVP_PKEY_derive_init(EVP_PKEY_CTX *ctx);
+\end{verbatim}
+To set the peer key, that is normally a public key, you need to call:
+\begin{verbatim}
+  int EVP_PKEY_derive_set_peer(EVP_PKEY_CTX *ctx, EVP_PKEY *peer);
+\end{verbatim} 
+Finally you can derive a shared secret using the context. If key is NULL then the maximum size of the output buffer is written to the keylen parameter, otherwise the keylen parameter should contain the length of the key buffer: at the end the output shared key is written to key and its length is written to keylen.
+\begin{verbatim}
+  int EVP_PKEY_derive(EVP_PKEY_CTX *ctx, unsigned char *key, size_t *keylen);
+\end{verbatim} 
+\subsubsection*{Example - Key agreement}
+The following code sample shows how a private/public key pair and a public key of some peer can be combined to derive the shared secret.
+\begin{verbatim}
+#include <openssl/evp.h>
+#include <openssl/rsa.h>
+
+  unsigned char *skey;  //shared key
+  size_t skeylen;
+  EVP_PKEY *peerkey;  //public key of some peer
+  EVP_PKEY *pkey;  //private/public key
+  EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new(pkey);
+  if (!ctx)
+    // error occurred
+  if (EVP_PKEY_derive_init(ctx) <= 0)
+    // error
+  if (EVP_PKEY_derive_set_peer(ctx, peerkey) <= 0)
+    // error
+  // determine buffer length
+  if (EVP_PKEY_derive(ctx, NULL, &skeylen) <= 0)
+    // error
+  skey = OPENSSL_malloc(skeylen);
+  if (!skey)
+    // malloc failure
+  if (EVP_PKEY_derive(ctx, skey, &skeylen) <= 0)
+    //error
+    
+  /* Shared secret is skey bytes written to buffer skey */
+\end{verbatim}
+\newpage
+
+\subsection{Public key cryptography standard}
+\begin{table}[!ht]
+	\begin{tabular}{|| c | c | c | c | c ||}
+		\textbf{PKCS \#1} & \textbf{PKCS \#5} & \textbf{PKCS \#8}  & \textbf{PKCS \#11} & \textbf{PKCS \#12} \\
+		\hline \hline
+		YES & YES & YES & YES & YES \\
+	\end{tabular}
+\end{table}
+
+\subsection{Hash}
+\begin{table}[!ht]
+	\begin{tabular}{|| c | c | c ||}
+		\textbf{SHA-1} & \textbf{SHA-2} & \textbf{SHA-3} \\
+		\hline \hline
+		YES & YES & YES \\
+	\end{tabular}
+\end{table}
+
+\subsubsection*{API basic reference}
+All is managed by EVP\_MD class.
+First of all you need to create a \textit{MessageDigest} and initialize it:
+\begin{verbatim}
+  EVP_MD_CTX* EVP_MD_CTX_new();
+  int EVP_DigestInit_ex(EVP_MD_CTX *ctx, const EVP_MD *type, ENGINE *impl);
+\end{verbatim}
+where the default impl is SHA-1 (to use it, impl can be left as NULL). To process messages and compute the partial digests it is possible to call:
+\begin{verbatim}
+  int EVP_DigestUpdate(EVP_MD_CTX *ctx, const void *d, size_t cnt);
+\end{verbatim}
+The last step is to produce the final digest with the function:
+\begin{verbatim}
+  int EVP_DigestFinal_ex(EVP_MD_CTX *ctx, unsigned char *md, unsigned int *s);
+\end{verbatim}
+without forgetting to release memory to prevent leaks, calling simply:
+\begin{verbatim}
+  void EVP_MD_CTX_free(EVP_MD_CTX *ctx);
+\end{verbatim}
+
+\subsubsection*{Example - SHA-1}
+\begin{verbatim}
+#include <stdio.h>
+#include <openssl/evp.h>
+
+int main(){
+  EVP_MD_CTX *mdctx;
+  const EVP_MD *md;
+  char mess1[] = "Test Message\n";
+  char mess2[] = "Hello World\n";
+  unsigned char md_value[EVP_MAX_MD_SIZE];
+  int md_len, i;
+
+  // ckeck for support of SHA-1
+  OpenSSL_add_all_digests();
+  md = EVP_get_digestbyname("SHA-1");
+  if(!md)
+    // error
+    
+  // create and initialize md context
+  mdctx = EVP_MD_CTX_new();
+  EVP_DigestInit_ex(mdctx, md, NULL);
+  
+  // compute digests (partial results are concatenated)
+  EVP_DigestUpdate(mdctx, mess1, strlen(mess1));
+  EVP_DigestUpdate(mdctx, mess2, strlen(mess2));
+  
+  // get final digest and clean resource
+  EVP_DigestFinal_ex(mdctx, md_value, &md_len);
+  EVP_MD_CTX_free(mdctx);
+
+  // print digest
+  printf("Digest is: ");
+  for(i = 0; i < md_len; i++)
+    printf("%02x", md_value[i]);
+  printf("\n");
+
+  // Final cleanup
+  EVP_cleanup();
+  exit(0);
+}
+\end{verbatim}
+\newpage
+
+\subsection{MAC}
+\begin{table}[!ht]
+	\begin{tabular}{|| c | c | c | c | c ||}
+		\textbf{HMAC-MD5} & \textbf{HMAC-SHA-1} & \textbf{HMAC-SHA-2} & \textbf{Poly1305-AES} & \textbf{BLAKE2-MAC} \\
+		\hline \hline
+		YES & YES & YES & YES & YES \\
+	\end{tabular}
+\end{table}
+
+\subsection{Block ciphers}
+\begin{table}[!h]
+	\begin{tabular}{|| c | c | c | c | c ||}
+		\textbf{AES} & \textbf{Camellia} & \textbf{3DES} & \textbf{Blowfish} & \textbf{Twofish} \\
+		\hline \hline
+		YES & YES & YES & YES & - \\
+	\end{tabular}
+\end{table}
+
+\subsection{Modes of operations}
+\begin{table}[!h]
+	\begin{tabular}{|| c | c | c | c | c | c | c | c ||}
+		\textbf{ECB} & \textbf{CBC} & \textbf{OFB} & \textbf{CFB} & \textbf{CTR} & \textbf{CCM} & \textbf{GCM} & \textbf{OCB} \\
+		\hline \hline
+		YES & YES & YES & YES & YES  & YES & YES & YES\\
+	\end{tabular}
+\end{table}
+
+\subsubsection*{API basic reference}
+First of all it is necessary to set up a context:
+\begin{verbatim}
+  EVP_CIPHER_CTX_new())
+\end{verbatim}
+After that you have to initialize the encryption operation, with something like this:
+\begin{verbatim}
+  int EVP_EncryptInit_ex(EVP_CIPHER_CTX *ctx, const EVP_CIPHER *type,
+     ENGINE *impl, const unsigned char *key, const unsigned char *iv);
+\end{verbatim}
+This function sets up cipher context ctx, created tih the function seen before, for encryption with cipher type from ENGINE impl. type is normally supplied by a function such as EVP\_aes\_256\_cbc(). If impl is NULL then the default implementation is used. key is the symmetric key to use and iv is the IV to use (if necessary), the actual number of bytes used for the key and IV depends on the cipher.
+To start computing the encryption of the plaintext blocks it is necessary to invoke the update function:
+\begin{verbatim}
+  int EVP_EncryptUpdate(EVP_CIPHER_CTX *ctx, unsigned char *out,
+                   int *outl, const unsigned char *in, int inl);
+\end{verbatim}
+that encrypts inl bytes from the buffer in and writes the encrypted version to out. This function can be called multiple times to encrypt successive blocks of data. To encrypt the last block:
+\begin{verbatim}
+  int EVP_EncryptFinal_ex(EVP_CIPHER_CTX *ctx, unsigned char *out, int *outl);
+\end{verbatim}
+that returns the computed ciphertext. To prevent memory leaks remember to clean the context, with the counterpart function of the initial EVP\_CIPHER\_CTX\_new()):
+\begin{verbatim}
+  EVP_CIPHER_CTX_free())
+\end{verbatim}
+The decryption uses the same syntax except for the keyword Decrypt instead of Encrypt: for this reason the decrypted functions are not presented here, but only in the example below.
+
+\subsubsection*{Example - AES256-CBC}
+Simple encryption and decryption functions that wrap the functions described above
+\begin{verbatim}
+int encrypt(unsigned char *plaintext, int plaintext_len,
+ unsigned char *key, unsigned char *iv, unsigned char *ciphertext){
+
+  EVP_CIPHER_CTX *ctx;
+  int len;
+  int ciphertext_len;
+
+  //Create and initialise the context */
+  if(!(ctx = EVP_CIPHER_CTX_new()))
+    //error
+  // Init the encryption operation
+    if(1 != EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv))
+      //error
+
+  // provide the message to be encrypted, and obtain the encrypted output.
+  if(1 != EVP_EncryptUpdate(ctx, ciphertext, &len, plaintext, plaintext_len))
+    //error
+  
+  // Final encryption
+  ciphertext_len = len;
+  if(1 != EVP_EncryptFinal_ex(ctx, ciphertext + len, &len))
+    //error
+  ciphertext_len += len;
+
+  /* Clean up */
+  EVP_CIPHER_CTX_free(ctx);
+
+  return ciphertext_len;
+}
+\end{verbatim}
+\begin{verbatim}
+
+\end{verbatim}

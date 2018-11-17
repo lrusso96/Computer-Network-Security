@@ -1,0 +1,252 @@
+\begin{center}
+	\fbox{
+		\parbox{\textwidth}{
+			\includegraphics[width=0.4\textwidth]{botan-logo-hw3-1699981.png} \\
+			\underline{Infobox} \\
+			\textit{License}: Simplified BSD \\
+			\textit{Language}: C++ (Python support) \\
+			\textit{Company}: Jack Lloyd \\
+			\textit{Last version}: 2.8.0 (\textbf{2018}) \\
+			\textit{Website}:https://botan.randombit.net/ \\
+			\textit{Source code}: https://github.com/randombit/botan \\\\
+			\underline{Description} \\
+			Botan (Japanese for peony flower) is a C++ cryptography library taht offers the tools necessary to implement a range of practical systems, such as TLS protocol, X.509 certificates, modern AEAD ciphers, PKCS\#11 and TPM hardware support, password hashing, and post quantum crypto schemes.			
+		}
+	}
+\end{center}
+
+\newpage
+\subsection{Key generation and exchange}
+\begin{table}[!ht]
+	\begin{tabular}{|| c | c | c | c ||}
+		\textbf{DH} & \textbf{EDH} & \textbf{DSA} & \textbf{RSA} \\
+		\hline \hline
+		YES & YES & YES & YES \\
+	\end{tabular}
+\end{table}
+
+\subsubsection*{API basic reference}
+In order to achieve a key agreement it is necessary to create a Group (i.e. a domain) object (e.g. Elliptic Curve over prime fields). To generate the keys you can simply initialize two objects of class CTX\_PrivateKey, where CTX is a supported context (e.g. ECDH for Elliptic Curves DH), passing a Random Number Generator object and the domain:
+\begin{verbatim}
+  ECDH_PrivateKey(RandomNumberGenerator &rng,
+      constEC_Group &domain, constBigInt &x = 0)
+\end{verbatim}
+Since the key agreement aims to provide the same output to both parties, a function must wrap the computation that allows the two keys to be equal; this function in Botan is derive\_key:
+\begin{verbatim}
+  SymmetricKey derive_key(size_t key_len, const uint8_t in[],
+                      size_t in_len, string &params="") const
+\end{verbatim}
+where the uint8\_t vector can be replaced by a std::vector as well. That's all: the SimmetricKey object returned is ready to be used.
+
+\subsubsection*{Example - Key agreement}
+The code below performs an unauthenticated ECDH key agreement using the secp521r elliptic curve and applies the key derivation function KDF2(SHA-256) with 256 bit output length to the computed shared secret:
+\begin{verbatim}
+#include <botan/auto_rng.h>
+#include <botan/ecdh.h>
+#include <botan/ec_group.h>
+#include <botan/pubkey.h>
+#include <botan/hex.h>
+
+using namespace Botan;
+int main(){
+  AutoSeeded_RNG rng;
+  // ec domain and
+  EC_Group domain("secp521r1");
+  std::string kdf = "KDF2(SHA-256)";
+  
+  // generate ECDH keys
+  ECDH_PrivateKey keyA(rng, domain);
+  ECDH_PrivateKey keyB(rng, domain);
+  
+  // Construct key agreements
+  PK_Key_Agreement ecdhA(keyA,rng,kdf);
+  PK_Key_Agreement ecdhB(keyB,rng,kdf);
+  
+  // Agree on shared secret and derive symmetric key of 256 bit length
+  secure_vector<uint8_t> sA = ecdhA.derive_key(32,keyB.public_value()).bits_of();
+  secure_vector<uint8_t> sB = ecdhB.derive_key(32,keyA.public_value()).bits_of();
+  
+  if(sA != sB)
+    return 1;
+
+  std::cout << hex_encode(sA);
+  return 0;
+}
+\end{verbatim}
+
+\newpage
+\subsection{Public key cryptography standard}
+\begin{table}[!ht]
+	\begin{tabular}{|| c | c | c | c | c ||}
+		\textbf{PKCS \#1} & \textbf{PKCS \#5} & \textbf{PKCS \#8}  & \textbf{PKCS \#11} & \textbf{PKCS \#12} \\
+		\hline \hline
+		YES & YES & YES & YES & - \\
+	\end{tabular}
+\end{table}
+
+\subsection{Hash}
+\begin{table}[!ht]
+	\begin{tabular}{|| c | c | c ||}
+		\textbf{SHA-1} & \textbf{SHA-2} & \textbf{SHA-3} \\
+		\hline \hline
+		YES & YES & YES \\
+	\end{tabular}
+\end{table}
+
+\subsubsection*{API basic reference}
+In the next lines both Botan and std namespaces will be omitted for simplicity. The class \textit{HashFunction} manages the Hash. To create a HashFunction object use the static method below, specifying the type of algorithm that has to be used (e.g. "SHA-1"): 
+\begin{verbatim}
+    unique_ptr<HashFunction> HashFunction::create
+            (const string& algo_spec, const string& provider = "")	
+\end{verbatim}
+Once the object is initialized, it is possible to update it several times, passing the new input to process (a somewhat vector) and its length; these inputs are concatenated to the previous ones and the partial result is stored in the HashFunction object:
+\begin{verbatim}
+    void update(const uint8_t in[], size_t length)
+\end{verbatim}
+At the end you can simply call the final method that returns the computed digest and resets the object for future and independent computations, i.e. clear the state of the object:
+\begin{verbatim}
+    secure_vector<uint8_t> final()
+\end{verbatim}
+
+\subsubsection*{Example - SHA-1}
+Here I put a very simple snippet of code, using the above methods, that computes the SHA-1 digest of some consecutive inputs and prints it:
+\begin{verbatim}
+#include <botan/hash.h>
+#include <botan/hex.h>
+
+using namespace Botan;
+int main(){
+  // hash object
+  std::unique_ptr<HashFunction> hash1(HashFunction::create("SHA-1"));
+  
+  // process data and update hash object
+  while(condition){
+    value = ...
+    hash1->update(value, VALUE_LEN);
+  }
+  
+  // print the result and reset the object
+  std::cout << hex_encode(hash1->final());
+  return 0
+}
+\end{verbatim}
+
+\newpage
+\subsection{MAC}
+\begin{table}[!ht]
+	\begin{tabular}{|| c | c | c | c | c ||}
+		\textbf{HMAC-MD5} & \textbf{HMAC-SHA-1} & \textbf{HMAC-SHA-2} & \textbf{Poly1305-AES} & \textbf{BLAKE2-MAC} \\
+		\hline \hline
+		YES & YES & YES & YES & YES \\
+	\end{tabular}
+\end{table}
+
+\subsection{Block ciphers}
+\begin{table}[!h]
+	\begin{tabular}{|| c | c | c | c | c ||}
+		\textbf{AES} & \textbf{Camellia} & \textbf{3DES} & \textbf{Blowfish} & \textbf{Twofish} \\
+		\hline \hline
+		YES & YES & YES & YES & YES \\
+	\end{tabular}
+\end{table}
+
+\subsubsection*{API basic reference}
+The class \textit{BlockCipher} manages the block ciphers. First you need to initialize a BlockCipher object, passing the name of the algorithm:
+\begin{verbatim}
+    unique_ptr<BlockCipher> BlockCipher::create(const string& algo_spec,
+                                               const string& provider="")
+\end{verbatim}
+and set the private key using:
+\begin{verbatim}
+    void set_key(const SymmetricKey& key)
+\end{verbatim}
+then it is possible to encrypt the plaintext block simply calling:
+\begin{verbatim}
+    void encrypt(uint8_t block[])
+\end{verbatim}
+and passing the current block; finally remember to clear the cipher object to handle future clean encryptions:
+\begin{verbatim}
+    virtual void clear() = 0
+\end{verbatim}
+
+\subsubsection*{Example - AES-256}
+\begin{verbatim}
+#include <botan/block_cipher.h>
+#include <botan/hex.h>
+
+using namespace Botan;
+int main(){
+  // 256 bit key and 64 bit block to be used
+  std::vector<uint8_t> key = hex_decode("0010............ADC0");
+  std::vector<uint8_t> block = hex_decode("AA03..B771");
+
+  // cipher object
+  std::unique_ptr<BlockCipher> cipher(BlockCipher::create("AES-256"));
+
+  // set key and encrypt first block
+  cipher->set_key(key);
+  cipher->encrypt(block);
+  std::cout << hex_encode(block)
+
+  //reset cipher for next encryptions
+  cipher->clear();
+  ...
+\end{verbatim}
+
+\newpage
+\subsection{Modes of operations}
+\begin{table}[!h]
+	\begin{tabular}{|| c | c | c | c | c | c | c | c ||}
+		\textbf{ECB} & \textbf{CBC} & \textbf{OFB} & \textbf{CFB} & \textbf{CTR} & \textbf{CCM} & \textbf{GCM} & \textbf{OCB} \\
+		\hline \hline
+		- & YES & YES & YES & YES  & YES & YES & YES\\
+	\end{tabular}
+\end{table}
+
+\subsubsection*{API basic reference}
+The class \textit{Cipher\_Mode} manages the modes of operations. 
+When creating a Cipher\_Mode object it must be initialized with the proper mode (e.g. "CBC"):
+\begin{verbatim}
+    static unique_ptr<Cipher_Mode> Cipher_Mode::create
+        (const string& algo, Cipher_Dir direction, const string& provider="")
+\end{verbatim}
+To encrypt the plaintext it is necessary to start from the Initialization Vector:
+\begin{verbatim}
+    void start(const uint8_t nonce[], size_t nonce_len)
+\end{verbatim}
+and then simply invoke on the object the finish of the process; Care about the side-effect of the below function: a copy could be necessary!
+\begin{verbatim}
+    virtual void finish(secure_vector<uint8_t>& final_block, size_t offset=0)=0
+\end{verbatim}
+
+\subsubsection*{Example - CBC}
+\begin{verbatim}
+#include <botan/cipher_mode.h>
+#include <botan/hex.h>
+
+using namespace Botan;
+int main(){
+  // Random Number generator
+  AutoSeeded_RNG rng;
+
+  // plaintext and key
+  const ::string plaintext("Hello world");
+  std::vector<uint8_t> key = hex_decode("0010............ADC0");
+
+  // create Mode object and set private key
+  std::unique_ptr<Cipher_Mode> enc = 
+                     Cipher_Mode::create("AES-128/CBC/PKCS7", ENCRYPTION);
+  enc->set_key(key);
+
+  // generate fresh nonce (IV)
+  secure_vector<uint8_t> iv = rng.random_vec(enc->default_nonce_length());
+
+  // copy input to buffer
+  secure_vector<uint8_t> pt(plaintext.data(), plaintext.length());
+
+  // encrypt 
+  enc->start(iv);
+  enc->finish(pt);
+  std::cout << hex_encode(pt)
+  return 0;
+\end{verbatim}

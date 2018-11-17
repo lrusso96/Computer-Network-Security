@@ -1,0 +1,173 @@
+\begin{center}
+	\fbox{
+		\parbox{\textwidth}{
+			\includegraphics[width=0.4\textwidth]{cryptopp-logo-hw3-1699981.png} \\
+			\underline{Infobox} \\
+			\textit{License}: Boost Software License (all individual files are public domain) \\
+			\textit{Language}: C++ \\
+			\textit{Company}: The Crypto++ project \\
+			\textit{Last version}: 7.0.0 (\textbf{2018}) \\
+			\textit{Website}: https://www.cryptopp.com/ \\ 
+			\textit{Source code}: https://github.com/weidai11/cryptopp 	
+		}
+	}
+\end{center}
+
+\newpage
+\subsection{Key generation and exchange}
+\begin{table}[!ht]
+	\begin{tabular}{|| c | c | c | c ||}
+		\textbf{DH} & \textbf{EDH} & \textbf{DSA} & \textbf{RSA} \\
+		\hline \hline
+		YES & YES & YES & YES \\
+	\end{tabular}
+\end{table}
+
+\subsubsection*{API basic reference}
+First it is necessary to define a SimpleKeyAgreementDomain object, i.e. the domain for the key agreement (e.g. prime fields or binary fields). Once the domain has been created, you can easily create a key pair with the following function:
+\begin{verbatim}
+  void GenerateKeyPair(RandomNumberGenerator &rng,
+                byte *privateKey, byte *publicKey) const
+\end{verbatim}
+At this point you can derive agreed value from your private key and counterpart's public key, simply calling on the domain object:
+\begin{verbatim}
+bool Agree(byte *agreedValue, const byte *privateKey, const
+       byte *otherPublicKey, bool validateOtherPublicKey=true) const
+\end{verbatim}
+If successful, the key agreement is done: the shared key is stored to agreedValue address and is ready to be used.
+\subsubsection*{Example - Key agreement}
+This example shows a ECDH key agreement using NIST's 256 bit curve over the prime field.
+\begin{verbatim}
+OID CURVE = secp256r1();
+AutoSeededRandomPool rng;
+
+ECDH<ECP>::Domain dhA( CURVE ), dhB( CURVE );
+SecByteBlock privA(dhA.PrivateKeyLength()), pubA(dhA.PublicKeyLength());
+SecByteBlock privB(dhB.PrivateKeyLength()), pubB(dhB.PublicKeyLength());
+
+dhA.GenerateKeyPair(rng, privA, pubA);
+dhB.GenerateKeyPair(rng, privB, pubB);
+
+if(dhA.AgreedValueLength() != dhB.AgreedValueLength())
+  // error
+SecByteBlock sharedA(dhA.AgreedValueLength()), sharedB(dhB.AgreedValueLength());
+if(!dhA.Agree(sharedA, privA, pubB))
+  //error
+if(!dhB.Agree(sharedB, privB, pubA))
+  //error
+
+// use Integer for simplicity
+Integer ssa, ssb;
+ssa.Decode(sharedA.BytePtr(), sharedA.SizeInBytes());
+ssb.Decode(sharedB.BytePtr(), sharedB.SizeInBytes());
+cout << "(A): " << std::hex << ssa << endl;
+cout << "(B): " << std::hex << ssb << endl;
+
+\end{verbatim}
+\newpage
+\subsection{Public key cryptography standard}
+\begin{table}[!ht]
+	\begin{tabular}{|| c | c | c | c | c ||}
+		\textbf{PKCS \#1} & \textbf{PKCS \#5} & \textbf{PKCS \#8}  & \textbf{PKCS \#11} & \textbf{PKCS \#12} \\
+		\hline \hline
+		YES & YES & YES & YES & - \\
+	\end{tabular}
+\end{table}
+
+\subsection{Hash}
+\begin{table}[!ht]
+	\begin{tabular}{|| c | c | c ||}
+		\textbf{SHA-1} & \textbf{SHA-2} & \textbf{SHA-3} \\
+		\hline \hline
+		YES & YES & YES \\
+	\end{tabular}
+\end{table}
+
+\subsubsection*{API basic reference}
+The HashTransformation class manages hashes and digests in this library. To compute the digest of one single block it is possible to call:
+\begin{verbatim}
+  void CalculateDigest(byte *digest, const byte *input, size_t length)
+\end{verbatim}
+Instead, to concatenate more blocks of data it is possible to call the update function
+\begin{verbatim}
+  void Update(const byte *input, size_t length)
+\end{verbatim}
+many times. The final digest is computed simply calling:
+\begin{verbatim}
+  void Final(byte *digest)
+\end{verbatim}
+that stores the result to the address passed as parameter.
+\subsubsection*{Example - SHA-1}
+A very simple example that shows how define a SHA-1 object and compute the digest of some data.
+\begin{verbatim}
+SHA hash;
+byte digest[SHA::DIGESTSIZE];
+
+hash.Update(pbData1, nData1Len);
+hash.Update(pbData2, nData2Len);
+hash.Update(pbData3, nData3Len);
+hash.Final(digest);
+\end{verbatim}
+
+\newpage
+\subsection{MAC}
+\begin{table}[!ht]
+	\begin{tabular}{|| c | c | c | c | c ||}
+		\textbf{HMAC-MD5} & \textbf{HMAC-SHA-1} & \textbf{HMAC-SHA-2} & \textbf{Poly1305-AES} & \textbf{BLAKE2-MAC} \\
+		\hline \hline
+		YES & YES & YES & YES & YES \\
+	\end{tabular}
+\end{table}
+
+\subsection{Block ciphers}
+\begin{table}[!h]
+	\begin{tabular}{|| c | c | c | c | c ||}
+		\textbf{AES} & \textbf{Camellia} & \textbf{3DES} & \textbf{Blowfish} & \textbf{Twofish} \\
+		\hline \hline
+		YES & YES & YES & YES & YES \\
+	\end{tabular}
+\end{table}
+
+\subsection{Modes of operations}
+\begin{table}[!h]
+	\begin{tabular}{|| c | c | c | c | c | c | c | c ||}
+		\textbf{ECB} & \textbf{CBC} & \textbf{OFB} & \textbf{CFB} & \textbf{CTR} & \textbf{CCM} & \textbf{GCM} & \textbf{OCB} \\
+		\hline \hline
+		YES & YES & YES & YES & YES  & YES & YES & - \\
+	\end{tabular}
+\end{table}
+
+\subsubsection*{API basic reference}
+After initializing a Mode of operation object (e.g CFB\_Mode) it is possible to encrypt the plaintext in a very simple way calling the below:
+\begin{verbatim}
+  ProcessData(byte* cipherText, const byte* plainText, size_t messageLen)
+\end{verbatim}
+The above function can be used both for encrypt and decrypt data for simmetric modes of operations (e.g. CFB). Remember to generate the Initialization Vector before encrypting any data with the following:
+\begin{verbatim}
+  GenerateBlock(SecByteBlock key, size_t keylen)
+\end{verbatim}
+to be called on a Random Number Generator object.
+\subsubsection*{Example - CFB}
+\begin{verbatim}
+AutoSeededRandomPool rnd;
+
+// Generate a random key
+SecByteBlock key(0x00, AES::DEFAULT_KEYLENGTH);
+rnd.GenerateBlock(key, key.size());
+
+// Generate a random IV
+SecByteBlock iv(AES::BLOCKSIZE);
+rnd.GenerateBlock(iv, iv.size());
+
+byte plainText[] = "Hello! How are you.";
+size_tmessageLen = std::strlen((char*)plainText) + 1;
+
+// Encrypt
+CFB_Mode<AES>::Encryption cfbEncryption(key, key.size(), iv);
+cfbEncryption.ProcessData(plainText, plainText, messageLen);
+
+// Decrypt
+CFB_Mode<AES>::Decryption cfbDecryption(key, key.size(), iv);
+cfbDecryption.ProcessData(plainText, plainText, messageLen);
+
+\end{verbatim}
