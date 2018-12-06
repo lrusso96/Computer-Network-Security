@@ -1,0 +1,128 @@
+\documentclass[11 pt]{article}
+\usepackage{graphicx}
+\title{
+	Public and private keys management \\
+	\large HW5 - CNS Sapienza}
+
+\author{Luigi Russo 1699981}
+\date{30/11/2018}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+Most of cryptographic algorithms and protocols need the usage of a key, both private or public. The key management is quite complex and involves \cite{Wikipedia} a lot of operations and tasks: generation, exchange, storage, use, destruction, replacement, etc. The goal of this homework is to provide basic infos about the storage of cryptographic keys. Since a key can be seen as an object whose properties can vary a lot according to the specific usage (e.g. the length), the first thing to do in order to guarantee a correct storage is to serialize the key object, i.e. represent the key as a stream of bytes, ready to be "packed" as a file.
+\subsection{Key serialization}
+There are many common schemes that provide a way to serialize both private and public keys to bytes. These methods generally support encryption of private keys and additional key metadata. Also public keys can be encrypted, despite their "intrinsic nature" would suggest to not do that. Some of the choices we could face when storing a key are:
+\begin{itemize}
+	\item Type of file:
+	\begin{itemize}
+		\item binary file
+		\item ASCII (text) file
+	\end{itemize}
+	\item Use of encryption:
+	\begin{itemize}
+		\item NO $\rightarrow$ plaintext
+		\item YES $\rightarrow$ ciphertext
+	\end{itemize}
+	\item The encoding / encapsulation type:
+	\begin{itemize}
+		\item PEM
+		\item DER
+		\item XML
+		\item PKCS \#12
+		\item RFC 4253
+		\item ...
+	\end{itemize}
+	\item The format:
+	\begin{itemize}
+		\item PKCS \#1
+		\item PKCS \#3
+		\item PKCS \#8
+		\item ...
+	\end{itemize}
+\end{itemize}
+
+\section{Popular encodings}
+
+% some standards
+\subsection{PEM}
+PEM - \textit{Privacy-Enhanced Mail} - is a popular file format for storing keys and certificates. The keys stored in PEM can be also of different types, since PEM uses the so called self-identification, i.e. each key is associated with some overhead useful for the identification.
+\paragraph*{Type of file}
+It uses the ASCII \textbf{base64} encoding and all the keys are encapsulated in a block delimited by an header
+\begin{verbatim}
+  -----BEGIN {format}-----
+\end{verbatim}
+and its corresponding footer
+\begin{verbatim}
+-----END {format}-----
+\end{verbatim}
+\paragraph*{Encryption}
+It is possible to encrypt the private key, using a proper encryption algorithm (e.g AES, Camellia, etc). 
+\paragraph*{Extension}
+The extension of the file is \textbf{.pem}, however there are some extensions, not always standardized, like \textbf{.key}.
+
+\subsection{DER}
+DER is an ASN.1 encoding type, quite popular on Windows systems.
+\paragraph*{Encoding}
+There are no encapsulation boundaries and the data is stored in binary. It is the parent format of PEM that, except for the delimiters, can be seen as the base64 equivalent of DER.
+\paragraph*{Encryption}
+As PEM, also DER supports the encryption of both private and public keys.
+\paragraph*{Extension}
+The extension of the file is \textbf{.der}.
+
+\subsection{PKCS \#12}
+Originally defined by RSA as the standard 12, and later defined as standard RFC 7292, it is used generally by Windows systems, although it can be freely converted to PEM format.
+\paragraph*{Type of file}
+This is a binary file.
+\paragraph*{Encryption}
+It is encrypted by design.
+\paragraph*{Extension}
+The extensions of the file are \textbf{.pkcs12}, \textbf{.pfx} and \textbf{.p12}.
+
+\subsection{RFC 4253}
+This is the format used by OpenSSH to store public keys.
+\paragraph*{Type of file}
+It's a base64 file. There are no header nor footer, no internal line-breaks, and the labels are space-separated.
+\paragraph*{Encryption}
+It is possible to encrypt the key with the common algorithms.
+\paragraph*{Extension}
+The extension of the file is \textbf{.pub}.
+
+\subsection{XML}
+There is also a W3C standard (\textbf{XKMS 2.0}) that supports the storing of both private and public keys.
+
+\section{Serialization scripts}
+I have written a simple interface to handle the most common formats and encodings, both for public and private keys. I have implemented it in Python 3.7, the source code is attached. Currently it is possible to handle these formats and encodings:
+\begin{itemize}
+	\item PEM
+	\item DER
+	\item RFC 4253 (*)
+	\item PCKS \#1
+	\item PCKS \#8
+	\item RFC 5280 (*)
+\end{itemize}
+(*) \textit{available only for public keys}
+
+\subsection{Example}
+\begin{verbatim}
+//load key from file PEM
+pd = PrivateDumping()
+file_pem = 'pkey.pem'
+pd.load_key(file_pem)
+
+//converto to DER
+pd.set_encoding('der')
+file_der = 'pkey.der'
+pd.store_key(file_der)
+\end{verbatim}
+
+\begin{thebibliography}{10}
+		
+	\bibitem{Wikipedia}
+	\textsl{Wikipedia Cryptography Portal} \\
+	\textit{https://en.wikipedia.org/wiki/Portal:Cryptography}
+	
+\end{thebibliography}
+\end{document}
