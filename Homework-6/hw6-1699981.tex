@@ -55,7 +55,7 @@ This is the protocol that I have designed. I have assumed that N is a constant n
 		\item Alice generates $T_A$
 		\item Bob generates $T_B$
 	\end{itemize}
-	\item select a choice in ("Paper", "Scissors" ,"Rock")
+	\item select a choice in \{"Paper", "Scissors" ,"Rock"\}
 	\begin{itemize}
 		\item Alice selects $C_A$
 		\item Bob selects $C_B$
@@ -77,7 +77,7 @@ This is the protocol that I have designed. I have assumed that N is a constant n
 	\end{itemize}
 	\item update results
 	\begin{itemize}
-		\item if $C_A > C_B$\footnote{remember that $S > P$, $P > R$ and $R > S$}, increment $W_A$
+		\item if $C_A > C_B$\footnote{remember that in a Roshambo round $Scissors > Paper$, $Paper > Rock$ and $Rock > Scissors$.}, increment $W_A$
 		\item if $C_B < C_A$, increment $W_B$
 	\end{itemize}
 	\item repeat from (2)
@@ -104,5 +104,5 @@ The nonces $N_A$ and $N_B$ are useful to prevent computations before the actual 
 The nonces $T_A$ and $T_B$ are needed to prevent replay attacks. If Alice makes a choice $C_A \in \{P, S, R\}$, in the next rounds the same choice leads to a different hash, thus avoiding that Bob knows in advance what is the value chosen.
 
 \subsection{Disputes regarding the winner}
-Both Alice and Bob have local counters of the number of games won by them and by their opponent. Before starting a new round of the match, they send each other their local values and compare them: if some value is wrong, it means that one of the players is cheating on the number of won games. It is not possible that Alice and Bob dispute regarding the winner of a game: in fact, once the choices are sent in plaintext together with the private nonce, the two players can compute an hash and compare it with the last message received by the opponent; if one of the two tries to change his choice, the opponent will notice that unfair behavior and quit the game. When one of the two players reaches p + 1 wins, he sends to the opponent a winning message and simply close the connection: the opponent can check if his opponent has won, looking at the number of won games. At this point he simply replies with a congratulations message and close the connection.
+Both Alice and Bob have local counters of the number of games won by them and by their opponent. Before starting a new round of the match, they send each other their local values and compare them: if some value is wrong, it means that one of the players is cheating on the number of won games. It is not possible that Alice and Bob dispute regarding the winner of a game: in fact, once the choices are sent in plaintext together with the private nonce, the two players can compute an hash and compare it with the last message received by the opponent; if one of the two tries to change his choice, the opponent will notice that unfair behavior and quit the game. When one of the two players reaches p + 1 wins, he sends to the opponent a winning message and simply close the connection: the opponent can check if his opponent has won, looking at the number of won games. At this point he simply replies with a congratulations message and closes the connection.
 \end{document}
