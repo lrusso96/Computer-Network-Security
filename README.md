@@ -1,4 +1,4 @@
-# CNS
+# Computer Network Security [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 This repo contains my homeworks for Computer and Network Security course by professor F. D'Amore.
 
 ## List of homeworks
@@ -22,9 +22,6 @@ This repo contains my homeworks for Computer and Network Security course by prof
 **Title: [Collection of open-source cryptographic libraries](Homework-3)**
 
 <img src="Homework-3/OpenSSL-logo-hw3-1699981.png"  width="180">
-<img src="Homework-3/botan-logo-hw3-1699981.png"  width="180">
-<img src="Homework-3/cryptopp-logo-hw3-1699981.png"  width="180">
-<img src="Homework-3/nettle-logo-hw3-1699981.png"  width="180">
 
 ### #4
 **Date:** 23/10/2018
